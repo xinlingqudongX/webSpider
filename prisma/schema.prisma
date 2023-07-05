@@ -1,0 +1,106 @@
+generator client {
+    provider             = "prisma-client-py"
+    recursive_type_depth = "5"
+}
+
+datasource db {
+    provider = "sqlite"
+    url      = env("SQLITE_DATABASE_URL")
+}
+
+model Peopoe {
+    people_id         Int      @id @default(autoincrement())
+    people_phone      String
+    people_location   String
+    people_address    String
+    people_wage       String
+    people_gender     String
+    people_nation     String
+    people_desc       String
+    people_degree     String
+    source_link       String
+    people_birth_date String
+    people_create     DateTime @default(now())
+    people_update     DateTime @default(now())
+}
+
+model SpiderTask {
+    spider_id   Int      @id @default(autoincrement())
+    spider_name String
+    start_url   String
+    now_url     String
+    now_status  Int
+    now_process Int
+    now_threads Int
+    start_time  DateTime
+    end_time    DateTime
+    create_time DateTime @default(now())
+    update_time DateTime @default(now())
+}
+
+model SpiderTaskContent {
+    content_id     Int      @id @default(autoincrement())
+    title          String
+    content        String
+    link           String
+    content_suffix String
+    create_time    DateTime @default(now())
+    update_time    DateTime @default(now())
+}
+
+model MechanismInfo {
+    mechanism_id            Int      @id @default(autoincrement())
+    mechanism_name          String
+    mechanism_address       String
+    mechanism_superior_name String
+    mechanism_superior_id   Int
+    telephone               String
+    mechanism_domain        String
+    source_link             String
+    create_time             DateTime @default(now())
+    update_time             DateTime @default(now())
+}
+
+model Area {
+    area_id             Int      @id @default(autoincrement())
+    area_name           String
+    area_history_name   String
+    area_history_create String
+    area_history_id     Int
+    area_parent         Int
+    area_website        String
+    area_create         DateTime @default(now())
+    area_update         DateTime @default(now())
+    area_adcode         String
+}
+
+model Department {
+    department_id          Int      @id @default(autoincrement())
+    department_name        String
+    department_superior    Int
+    department_website     String
+    department_website_ico String
+    department_create      DateTime @default(now())
+    department_update      DateTime @default(now())
+}
+
+model Job {
+    job_id             Int      @id @default(autoincrement())
+    job_name           String
+    job_superior       Int
+    job_history_create String
+    job_create         DateTime @default(now())
+    job_update         DateTime @default(now())
+}
+
+model Officer {
+    officer_id             Int      @id @default(autoincrement())
+    officer_name           String
+    officer_avatar         Bytes
+    officer_job            String
+    officer_area           String
+    officer_superior       Int
+    officer_history_create String
+    officer_create         DateTime @default(now())
+    officer_update         DateTime @default(now())
+}

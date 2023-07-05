@@ -1,0 +1,5 @@
+
+title = "测试配置"
+
+[database]
+DATABASE_URL = "../../../time_spectrum.db"
