@@ -7,11 +7,13 @@ class ConnectionManager:
         self.active_connections: Set[WebSocket] = set()
 
     async def connect(self, websocket: WebSocket):
+        '''等待ws连接'''
         await websocket.accept()
         await self.notify_all("A new client has connected")
         self.active_connections.add(websocket)
 
     async def disconnect(self, websocket: WebSocket):
+        '''断开ws连接'''
         self.active_connections.remove(websocket)
         await self.notify_all("A client has disconnected")
 

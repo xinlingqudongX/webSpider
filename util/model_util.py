@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import jieba
+import re
 
 def jieba_load_words(dirPath: str) -> bool:
     dirPaths = Path(dirPath)
@@ -16,4 +17,15 @@ def jieba_load_words(dirPath: str) -> bool:
         jieba.load_userdict(str(userdictPath))
     
     return True
+
+def extract_spider(filepath: str):
+    path = Path(filepath)
+    if not path.exists():
+        return
     
+    with open(path, encoding='utf8') as f:
+        data = f.read()
+    
+    names = re.findall(r' (.*?)\(BaseSpider\):', data)
+    spider_name = names[0]
+    return spider_name

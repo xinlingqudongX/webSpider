@@ -42,7 +42,7 @@ model SpiderTaskContent {
     content_id     Int      @id @default(autoincrement())
     title          String
     content        String
-    link           String
+    link           String   @unique
     content_suffix String
     create_time    DateTime @default(now())
     update_time    DateTime @default(now())

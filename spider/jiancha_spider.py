@@ -15,12 +15,13 @@ import re
 from prisma import Prisma
 from prisma.models import Peopoe, SpiderTask, SpiderTaskContent
 import asyncio
+import sys
 
-
+print(sys.path)
 try:
     from spider.base_spider import BaseParser, BaseSpider
 except ModuleNotFoundError as err:
-    from base_spider import BaseParser, BaseSpider
+    from .base_spider import BaseParser, BaseSpider
 
 
 class JianChaParser(BaseParser):
@@ -30,8 +31,6 @@ class JianChaParser(BaseParser):
         super().__init__(spider)
         print(os.getcwd(),'当前目录')
         print(os.getenv('DEBUG'),'变量配置')
-        self.loop = asyncio.get_event_loop()
-        self.loop.run_until_complete(self.initConfig())
     
     async def prismaDB(self):
         if not hasattr(self, 'db'):
@@ -75,7 +74,12 @@ class JianChaParser(BaseParser):
         print(users)
     
     async def create_task(self,data):
-        task = await SpiderTaskContent.prisma().create(data=data)
+        task = await SpiderTaskContent.prisma().upsert(where={
+            'link':data['link'],
+        }, data={
+            'create': data,
+            'update': data
+        })
         
         print(task)
     
@@ -173,27 +177,12 @@ class JianChaSpider(BaseSpider):
             'Host':'www.ccdi.gov.cn',
             'Accept-Encoding': 'identity'
         }, cookies={
-            'HBB_HC':'ed848dfe0b71aac60c1871287a13b981c6e7e730c946e3390f19d188f78626947b558aedb3538c5c1a2b43edb1d1704b01',
-            'HMF_CI':'14b1da7ff0d7caa9e79b0deacc59d8c8d53790f2376808a3238216a4add4e233cacf69f80630e0450b9f419ab6b7b3c9bd180f93afc30c36f68fe8c7237aa8f36c',
-            'HMY_JC':'a4fad476226359764c53a03a60a135634859b4acb69d5ff50a01c53ce5549291f1',
+            'HBB_HC':'560bfb1edbdfaf2e341276f25ac0047dbd9d2abe04b3c7356ad68e240ce09913e6acb6f19a4e6079def3e96f3240c3d14a',
+            'HMF_CI':'14b1da7ff0d7caa9e79b0deacc59d8c8ee03ad875ab37808c4d7b98688964f39bc60bd52af69c1f7e64fc41c244f9dab5f00945fcb5c95ef1bad0e0d72264d470f',
+            'HMY_JC':'79debc0b5070854381106771b94a2965c0a682318010560b8ce31e787805f9151b,',
         })
         
         self.register_parser(JianChaParser(self))
-
-    def start(self, start_url: str | List[str]):
-        if isinstance(start_url, str):
-            self.download_links.add(start_url)
-        elif isinstance(start_url, list):
-            self.download_links.update(start_url)
-        else:
-            return 
-
-        while len(self.download_links):
-            url = self.download_links.pop()
-            res = self.download(url)
-            # print(res)
-        
-        print('完成')
     
 
 if __name__ == '__main__':
@@ -202,8 +191,8 @@ if __name__ == '__main__':
     links = []
     for i in range(15):
         if i:
-            links.append(f'https://www.ccdi.gov.cn/scdcn/zggb/djcf/index_{i}.html')
+            links.append(f'https://www.ccdi.gov.cn/scdcn/zggb/zjsc/index_{i}.html')
         else:
-            links.append(f'https://www.ccdi.gov.cn/scdcn/zggb/djcf/index.html')
-
-    jiancha.start(links)
+            links.append(f'https://www.ccdi.gov.cn/scdcn/zggb/zjsc/index.html')
+    jiancha.download_links.update(links)
+    jiancha.start()

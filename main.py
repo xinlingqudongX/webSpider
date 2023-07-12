@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 
 from util.export_type import AllException
+from ws.ws_router import wsManager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,7 +22,10 @@ async def lifespan(app: FastAPI):
     print('当前工作目录:', nowDir)
     print(f'启动:{app.title} 版本:{app.version}')
     config.initConfig()
-    jieba_load_words(str(Path(nowDir).joinpath('data','words')))
+    # print('正在导入jieba自定义分词')
+    # jieba_load_words(str(Path(nowDir).joinpath('data','words')))
+    print(app.docs_url)
+    print(app.redoc_url)
     yield
     print('结束参数')
 
@@ -62,4 +66,4 @@ async def all_exception_handler(request: Request, exc):
 app.mount('/public', StaticFiles(directory='public'), name='public')
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='0.0.0.0',port=8000)
+    uvicorn.run(app, host='0.0.0.0',port=8000, workers=2)
