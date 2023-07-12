@@ -1,5 +1,6 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from .ws_manager import ConnectionManager
+from typing import Dict, List, Set, Tuple
 
 
 wsManager = ConnectionManager()
@@ -14,7 +15,7 @@ async def websocket_endpoint(websocket: WebSocket):
     # print(data)
     try:
         while True:
-            data = await websocket.receive_json()
+            data = await websocket.receive_text()
             print(data,'接收的数据')
             await wsManager.notify_all(data)   # 将传入的数据发送到所有活动连接
     except WebSocketDisconnect as err:
