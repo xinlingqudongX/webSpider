@@ -18,7 +18,7 @@ async def start_spider(spider_name: str):
     spider = getattr(SpiderManager,spider_name, None)
     if not spider:
         return '不存在'
-    thread = Thread(target=spider().start)
+    thread = Thread(target=spider.start)
     thread.start()
     return '成功'
 
@@ -56,9 +56,6 @@ async def list_spider():
 
 @router.get('/list_module')
 async def list_module():
-    baseDir = os.getcwd()
-    # spiderDir = 'spider'
-    # print(os.getcwd())
     children = os.listdir(spiderDir)
     filter_children = [item.replace('.py','') for item in children if item.endswith('spider.py')]
     return filter_children
@@ -73,6 +70,6 @@ async def load_spider(req: Request, spider_name: str):
         return '加载失败'
     
     spiderClass = getattr(spider_module, classname)
-    setattr(SpiderManager,classname, spiderClass)
+    setattr(SpiderManager,classname, spiderClass())
     # spiderClass().start('https://www.ccdi.gov.cn/scdcn/zggb/zjsc/index.html')
     return '加载成功'

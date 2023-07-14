@@ -17,7 +17,6 @@ from prisma.models import Peopoe, SpiderTask, SpiderTaskContent
 import asyncio
 import sys
 
-print(sys.path)
 try:
     from spider.base_spider import BaseParser, BaseSpider
 except ModuleNotFoundError as err:

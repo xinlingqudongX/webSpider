@@ -3,17 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import uvicorn
-from util.model_util import jieba_load_words
-
 from base import netRequest
 from http import HTTPStatus
-from router import all
-from config import config
 import os
+
+from router import all
 from pathlib import Path
+from config import config
+from spider import initSpider
 
 from util.export_type import AllException
-from ws.ws_router import wsManager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -26,6 +25,7 @@ async def lifespan(app: FastAPI):
     # jieba_load_words(str(Path(nowDir).joinpath('data','words')))
     print(app.docs_url)
     print(app.redoc_url)
+    initSpider()
     yield
     print('结束参数')
 

@@ -18,7 +18,7 @@ def jieba_load_words(dirPath: str) -> bool:
     
     return True
 
-def extract_spider(filepath: str):
+def extract_spider(filepath: str) -> str | None:
     path = Path(filepath)
     if not path.exists():
         return
@@ -27,5 +27,5 @@ def extract_spider(filepath: str):
         data = f.read()
     
     names = re.findall(r' (.*?)\(BaseSpider\):', data)
-    spider_name = names[0]
+    spider_name = names[0] if len(names) > 0 else None
     return spider_name

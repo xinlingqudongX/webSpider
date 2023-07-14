@@ -9,15 +9,15 @@ class ConnectionManager:
     async def connect(self, websocket: WebSocket):
         '''等待ws连接'''
         await websocket.accept()
-        await self.notify_all("A new client has connected")
+        await self.notify_all("A new client has connected", websocket)
         self.active_connections.add(websocket)
 
     async def disconnect(self, websocket: WebSocket):
         '''断开ws连接'''
         self.active_connections.remove(websocket)
-        await self.notify_all("A client has disconnected")
+        await self.notify_all("A client has disconnected", websocket)
 
-    async def notify_all(self, message: str):
+    async def notify_all(self, message: str, exclude: WebSocket):
         if self.active_connections:
-            tasks = [websocket.send_text(message) for websocket in self.active_connections]
+            tasks = [ws.send_text(message) for ws in self.active_connections if ws != exclude]
             await asyncio.gather(*tasks)
