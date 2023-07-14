@@ -5,4 +5,4 @@ title = "测试配置"
 DATABASE_URL = "../../../time_spectrum.db"
 
 [logger]
-logger_conf = 'logger.conf'
+logger_conf = 'config/logging_config.json'

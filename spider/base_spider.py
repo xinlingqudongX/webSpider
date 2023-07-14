@@ -1,18 +1,18 @@
-from requests import Session, Response
+from requests import Session, Response, Request
 from bs4 import BeautifulSoup
 from typing import Any, List, OrderedDict, Tuple, Set, TypedDict, Dict
 from requests.adapters import HTTPAdapter
 import re
-import requests
+import requests.packages
 import asyncio
 from asyncio import AbstractEventLoop
 import websockets
 from websockets.sync.client import connect
 from urllib3.util import Retry
 import uuid
-from json import dumps, loads
+import json
 from websockets.exceptions import ConnectionClosedError
-import sys
+import logging
 from .spider_type import WsNotifyType
 
 class ParserKwargs(TypedDict):
@@ -30,7 +30,13 @@ class SpiderWsNotify(object):
     response_url: str
     notify_type: WsNotifyType
 
+class CustomJsonEncoder(json.JSONEncoder):
 
+    def default(self, o: Any) -> Any:
+        if isinstance(o, set):
+            return list(o)
+
+        return super().default(o)
 
 
 class BaseParser(object):
@@ -88,12 +94,12 @@ class BaseParser(object):
 
 class BaseSpider(object):
 
-    spider_id = str(uuid.uuid4())
-    stop_flag: bool = False
-    pause_flag: bool = False
-
     def __init__(self, custom_header = {}, cookies = {}, ws_config = {}) -> None:
-        self.req = Session()
+        self.stop_flag: bool = False
+        self.pause_flag: bool = False
+        self.spider_id = str(uuid.uuid4())
+        self.debug = False
+        self.__req = Session()
         self.custom_header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'
         }
@@ -102,63 +108,76 @@ class BaseSpider(object):
         self.loaded_domain = set()
         self.loaded_url = set()
         self.download_links: Set[str] = set()
-        self.retries = Retry(
+        self.__retries = Retry(
             total=3,
             status_forcelist=[502,503,504]
         )
 
-        self.req.mount('https://',HTTPAdapter(max_retries=self.retries))
-        self.req.mount('http://',HTTPAdapter(max_retries=self.retries))
-        self.req.headers.update(self.custom_header)
-        self.req.proxies.update({
+        self.__req.mount('https://',HTTPAdapter(max_retries=self.__retries))
+        self.__req.mount('http://',HTTPAdapter(max_retries=self.__retries))
+        self.__req.headers.update(self.custom_header)
+        self.__req.proxies.update({
             'http':'',
             'https': ''
         })
-        self.ws_config:Dict[str, Any] = {
+        self.__ws_config:Dict[str, Any] = {
             'uri': 'ws://localhost:8000/v1/ws',
         }
-        self.ws_config.update(ws_config)
+        self.__ws_config.update(ws_config)
 
-        self.req.verify = False
+        self.__req.verify = False
 
-        self.loop = asyncio.get_event_loop()
+        try:
+            self.__loop = asyncio.get_event_loop()
+        except Exception as err:
+            self.__loop = asyncio.get_running_loop()
 
         self.__initConfig()
         for key in cookies:
-            self.req.cookies.set(key, cookies[key])
+            self.__req.cookies.set(key, cookies[key])
 
     def __initConfig(self):
         if hasattr(requests, 'packages'):
             requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
         
-        self.req.hooks['response'].append(self.__ws_hook_res)
+        self.__req.hooks['response'].append(self.__ws_hook_res)
     
     def download(self, url: str):
-        res = self.req.get(url)
+        req = Request("GET", url)
+        prepped = req.prepare()
+
+        # res = self.__req.send(prepped)
+        res = self.__req.get(url)
         return res
     
     def register_parser(self, parser: BaseParser):
-        self.req.hooks['response'].append(parser)
+        self.__req.hooks['response'].append(parser)
     
     def __ws_init(self):
         try:
-            self.ws = connect(**self.ws_config)
-            self.ws.debug = True
+            self.__ws = connect(**self.__ws_config)
+            self.__ws.debug = True
         except ConnectionClosedError as err:
             print('ws连接失败')
 
     def __ws_hook_res(self, *args: Response, **kwargs: ParserKwargs):
         res = args[0]
+
+        spider_data = {key:val for key,val in self.__dict__.items() if not key.startswith('_')}
+
         notify = {
             'spider_id': self.spider_id,
             'response_url': res.url,
-            'notify_type': WsNotifyType.爬虫通知
+            'notify_type': WsNotifyType.爬虫通知,
+            **spider_data
         }
 
         try:
-            self.ws.send(dumps(notify))
+            logging.debug('爬虫数据:%s', json.dumps(spider_data, cls=CustomJsonEncoder))
+            self.__ws.send(json.dumps(notify, cls=CustomJsonEncoder))
         except Exception as err:
             print('发送失败')
+            logging.error(err)
     
     def __exit(self):
         print('完成')
@@ -169,11 +188,11 @@ class BaseSpider(object):
         }
 
         try:
-            self.ws.send(dumps(notify))
-            self.ws.close()
+            self.__ws.send(json.dumps(notify, cls=CustomJsonEncoder))
+            self.__ws.close()
         except Exception as err:
             print('发送失败')
-        sys.exit()
+        # sys.exit()
     
     def get_data(self):
         pass

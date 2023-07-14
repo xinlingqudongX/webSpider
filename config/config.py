@@ -1,6 +1,10 @@
 
 from dynaconf import Dynaconf
 from pydantic import BaseSettings
+import logging.config
+import json
+import os
+from datetime import datetime
 
 settings = Dynaconf(
     envvar_prefix="DYNACONF",
@@ -20,4 +24,13 @@ class EnvSettings(BaseSettings):
 def initConfig():
     '''初始化配置'''
     print('初始化配置', settings)
+    # 获取当前日期
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    
+    with open(settings['logger']['logger_conf']) as f:
+        logging_conf = json.load(f)
+        filename = logging_conf['handlers']['file']['filename']
+        logging_conf['handlers']['file']['filename'] = f'log/{current_date}_{filename}'
+        logging.config.dictConfig(logging_conf)
+        
     pass

@@ -6,6 +6,7 @@ from pathlib import Path
 import os
 from importlib import import_module
 from threading import Thread
+import logging
 
 from spider.base_spider import SpiderManager
 from util.model_util import extract_spider
@@ -14,12 +15,15 @@ router = APIRouter(tags=['spider'])
 spiderDir = Path(os.getcwd()).joinpath('spider')
 
 @router.get('/start_spider/{spider_name}')
-async def start_spider(spider_name: str):
+async def start_spider(spider_name: str, start_url: str):
     spider = getattr(SpiderManager,spider_name, None)
     if not spider:
         return '不存在'
+    
+    spider.download_links.add(start_url)
     thread = Thread(target=spider.start)
     thread.start()
+
     return '成功'
 
 @router.get('/stop_spider/{spider_id}')
@@ -48,11 +52,17 @@ async def create_script():
 
 @router.get('/list_spider')
 async def list_spider():
-    baseDir = os.getcwd()
-    # spiderDir = 'spider'
-    # print(os.getcwd())
     spider_names = [item for item in dir(SpiderManager) if not item.startswith('_')]
-    return spider_names
+    spider_items = []
+    for name in spider_names:
+        spider = getattr(SpiderManager, name)
+        if not spider:
+            continue
+        spider.name = name
+        spiderDict = {key:val for key,val in vars(spider).items() if not key.startswith('_')}
+        spider_items.append(spiderDict)
+
+    return spider_items
 
 @router.get('/list_module')
 async def list_module():
