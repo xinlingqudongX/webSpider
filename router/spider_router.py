@@ -26,24 +26,37 @@ async def start_spider(spider_name: str, start_url: str):
 
     return '成功'
 
-@router.get('/stop_spider/{spider_id}')
-async def stop_spider(spider_id: int):
+@router.get('/stop_spider/{spider_name}')
+async def stop_spider(spider_name: str):
+    spider = getattr(SpiderManager,spider_name, None)
+    if not spider:
+        return '不存在'
+    
+    spider.stop_flag = True
     return 1
 
-@router.get('/pause_spider/{spider_id}')
-async def pause_spider(spider_id: int):
+@router.get('/pause_spider/{spider_name}')
+async def pause_spider(spider_name: str):
+    spider = getattr(SpiderManager,spider_name, None)
+    if not spider:
+        return '不存在'
+    spider.pause_flag = True
     return 1
 
-@router.get('/resume_spider/{spider_id}')
-async def resume_spider(spider_id: int):
+@router.get('/resume_spider/{spider_name}')
+async def resume_spider(spider_name: str):
+    spider = getattr(SpiderManager,spider_name, None)
+    if not spider:
+        return '不存在'
+    spider.pause_flag = False
     return 1
 
 @router.get('/create_spider')
 async def create_spider():
     pass
 
-@router.get('/delete_spider/{spider_id}')
-async def delete_spider(spider_id: int):
+@router.get('/delete_spider/{spider_name}')
+async def delete_spider(spider_name: str):
     return 1
 
 @router.post('/create_script')
