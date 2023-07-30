@@ -13,6 +13,7 @@ from config import config
 from spider import initSpider
 
 from util.export_type import AllException
+from util.model_util import jieba_load_words
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

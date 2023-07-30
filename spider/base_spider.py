@@ -2,18 +2,20 @@ from requests import Session, Response, Request
 from bs4 import BeautifulSoup
 from typing import Any, List, OrderedDict, Tuple, Set, TypedDict, Dict
 from requests.adapters import HTTPAdapter
-import re
 import requests.packages
+import re
 import asyncio
 from asyncio import AbstractEventLoop
-import websockets
 from websockets.sync.client import connect
 from urllib3.util import Retry
 import uuid
 import json
 from websockets.exceptions import ConnectionClosedError
 import logging
-from .spider_type import WsNotifyType
+try:
+    from .spider_type import WsNotifyType
+except ImportError as err:
+    from spider_type import WsNotifyType
 
 class ParserKwargs(TypedDict):
     timeout: int | None
@@ -91,6 +93,23 @@ class BaseParser(object):
         if content and self.checkValid(args[0], content):
             self.start_parser(args[0], content)
 
+class CustomRequestTask(object):
+    '''自定义请求对象类'''
+
+    def __init__(self, **kwargs: Any) -> None:
+        self.data = kwargs
+    
+    def to_json(self):
+        return json.dumps(self.data, sort_keys=True)
+    
+    def __hash__(self) -> int:
+        return hash(self.to_json())
+    
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, CustomRequestTask):
+            return self.to_json() == __value.to_json()
+        
+        return False
 
 class BaseSpider(object):
 

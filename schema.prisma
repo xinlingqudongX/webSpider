@@ -104,3 +104,28 @@ model Officer {
     officer_create         DateTime @default(now())
     officer_update         DateTime @default(now())
 }
+
+model Recruitment {
+    recruitment_id          Int      @id @default(autoincrement())
+    company_name            String   @unique
+    social_recruitment_link String   @default("")
+    compus_recruiting_link  String   @default("")
+    company_website         String
+    recruitment_create      DateTime @default(now())
+    recruitment_update      DateTime @default(now())
+}
+
+model RecruitmentJob {
+    recruitment_job_id Int      @id @default(autoincrement())
+    company_name       String
+    job_title          String
+    job_location       String   @default("")
+    job_people_number  Int      @default(0)
+    release_time       String   @default("")
+    job_desc           String   @default("")
+    job_condition      String   @default("")
+    job_create         DateTime @default(now())
+    job_update         DateTime @default(now())
+
+    @@unique([company_name, job_title])
+}

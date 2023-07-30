@@ -21,3 +21,10 @@ class ConnectionManager:
         if self.active_connections:
             tasks = [ws.send_text(message) for ws in self.active_connections if ws != exclude]
             await asyncio.gather(*tasks)
+    
+    async def broadcast(self, text: str, exclude: WebSocket):
+        for conn in self.active_connections:
+            if conn is exclude:
+                continue
+
+            await conn.send_text(text)
