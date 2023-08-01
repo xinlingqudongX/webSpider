@@ -1,6 +1,6 @@
 from requests import Session, Response, Request
 from bs4 import BeautifulSoup
-from typing import Any, List, OrderedDict, Tuple, Set, TypedDict, Dict
+from typing import Any, List, OrderedDict, Tuple, Set, TypedDict, Dict, Union
 from requests.adapters import HTTPAdapter
 import requests.packages
 import re
@@ -126,7 +126,7 @@ class BaseSpider(object):
 
         self.loaded_domain = set()
         self.loaded_url = set()
-        self.download_links: Set[str] = set()
+        self.download_links: Set[Union[str, CustomRequestTask]] = set()
         self.__retries = Retry(
             total=3,
             status_forcelist=[502,503,504]
@@ -161,12 +161,14 @@ class BaseSpider(object):
         
         self.__req.hooks['response'].append(self.__ws_hook_res)
     
-    def download(self, url: str):
-        req = Request("GET", url)
-        prepped = req.prepare()
+    def download(self, url: str | CustomRequestTask):
+        if isinstance(url, str):
+            url = CustomRequestTask(url=url, method='GET')
+        # req = Request(**url.data)
+        # prepped = req.prepare()
 
         # res = self.__req.send(prepped)
-        res = self.__req.get(url)
+        res = self.__req.request(**url.data)
         return res
     
     def register_parser(self, parser: BaseParser):
