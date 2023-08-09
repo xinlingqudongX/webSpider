@@ -2,6 +2,7 @@ from requests import Session, Response, Request
 from bs4 import BeautifulSoup
 from typing import Any, List, OrderedDict, Tuple, Set, TypedDict, Dict, Union
 from requests.adapters import HTTPAdapter
+from requests.exceptions import SSLError, RetryError, ConnectionError
 import requests.packages
 import re
 import asyncio
@@ -12,6 +13,7 @@ import uuid
 import json
 from websockets.exceptions import ConnectionClosedError
 import logging
+import socket
 try:
     from .spider_type import WsNotifyType
 except ImportError as err:
@@ -143,8 +145,9 @@ class BaseSpider(object):
             'uri': 'ws://localhost:8000/v1/ws',
         }
         self.__ws_config.update(ws_config)
+        self.__ws = None
 
-        self.__req.verify = False
+        self.__req.verify = True
 
         try:
             self.__loop = asyncio.get_event_loop()
@@ -168,6 +171,7 @@ class BaseSpider(object):
         # prepped = req.prepare()
 
         # res = self.__req.send(prepped)
+        self.loaded_url.add(url.data.get("url",''))
         res = self.__req.request(**url.data)
         return res
     
@@ -177,9 +181,23 @@ class BaseSpider(object):
     def __ws_init(self):
         try:
             self.__ws = connect(**self.__ws_config)
-            self.__ws.debug = True
+            self.__ws.debug = self.debug
         except ConnectionClosedError as err:
             print('ws连接失败')
+        except ConnectionRefusedError as err:
+            print(err)
+            print('ws连接失败')
+    
+    @property
+    def __ws_connected(self):
+        if not self.__ws:
+            return False
+        
+        error_code = self.__ws.socket.getsockopt(socket.SOL_SOCKET,socket.SO_ERROR)
+        if error_code == 0:
+            return True
+        else:
+            return False
 
     def __ws_hook_res(self, *args: Response, **kwargs: ParserKwargs):
         res = args[0]
@@ -195,9 +213,11 @@ class BaseSpider(object):
 
         try:
             logging.debug('爬虫数据:%s', json.dumps(spider_data, cls=CustomJsonEncoder))
-            self.__ws.send(json.dumps(notify, cls=CustomJsonEncoder))
+            if self.__ws_connected:
+                self.__ws.send(json.dumps(notify, cls=CustomJsonEncoder))
         except Exception as err:
-            print('发送失败')
+            if self.debug:
+                print('发送失败')
             logging.error(err)
     
     def __exit(self):
@@ -233,7 +253,13 @@ class BaseSpider(object):
     
             if len(self.download_links):
                 url = self.download_links.pop()
-                res = self.download(url)
+                if url in self.loaded_url:
+                    continue
+                try:
+                    res = self.download(url)
+                except (SSLError, RetryError, ConnectionError) as err:
+                    print('请求失败:',url)
+                    print(err)
                 # print(res)
             else:
                 break
