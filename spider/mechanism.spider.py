@@ -85,7 +85,7 @@ class MechanismParser(BaseParser):
 
     def save_data(self,res: Response, content: str):
         urlData = urlparse(res.url)
-        if urlData.path.strip('/'):
+        if urlData.path != '/' and urlData.path:
             return
         
         print('当前网址:', res.url)
