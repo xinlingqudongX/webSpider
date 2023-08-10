@@ -9,6 +9,7 @@ import asyncio
 from asyncio import AbstractEventLoop
 from websockets.sync.client import connect
 from urllib3.util import Retry
+from urllib3.exceptions import InsecureRequestWarning
 import uuid
 import json
 from websockets.exceptions import ConnectionClosedError
@@ -130,7 +131,7 @@ class BaseSpider(object):
         self.loaded_url = set()
         self.download_links: Set[Union[str, CustomRequestTask]] = set()
         self.__retries = Retry(
-            total=3,
+            total=1,
             status_forcelist=[502,503,504]
         )
 
@@ -147,7 +148,7 @@ class BaseSpider(object):
         self.__ws_config.update(ws_config)
         self.__ws = None
 
-        self.__req.verify = True
+        self.__req.verify = False
 
         try:
             self.__loop = asyncio.get_event_loop()
@@ -161,12 +162,13 @@ class BaseSpider(object):
     def __initConfig(self):
         if hasattr(requests, 'packages'):
             requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ':HIGH:!DH:!aNULL'
+            requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
         
         self.__req.hooks['response'].append(self.__ws_hook_res)
     
     def download(self, url: str | CustomRequestTask):
         if isinstance(url, str):
-            url = CustomRequestTask(url=url, method='GET')
+            url = CustomRequestTask(url=url, method='GET', timeout=5, )
         # req = Request(**url.data)
         # prepped = req.prepare()
 
@@ -259,8 +261,10 @@ class BaseSpider(object):
                     res = self.download(url)
                 except (SSLError, RetryError, ConnectionError) as err:
                     print('请求失败:',url)
-                    print(err)
+                    # print(err.request.url)
                 # print(res)
+                except Exception as err:
+                    print('请求失败',err)
             else:
                 break
         

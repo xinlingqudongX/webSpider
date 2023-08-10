@@ -88,10 +88,8 @@ class MechanismParser(BaseParser):
         if urlData.path != '/' and urlData.path:
             return
         
-        print('当前网址:', res.url)
         titles = re.findall(r'<title>(.*?)</title>', content, re.S | re.I)
-        print('标题:',titles)
-        print('请求时间:',datetime.now())
+        print('当前网址:', res.url, '标题:',titles, '请求时间:',datetime.now())
 
 class MechanismSpider(BaseSpider):
 
