@@ -50,6 +50,6 @@ class Mi(object):
         res = self.req.options(link)
         print(res)
 
-if __name__ == '__name__':
+if __name__ == '__main__':
     mi = Mi()
     mi.qrcode_login()
